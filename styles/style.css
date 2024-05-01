@@ -1,0 +1,15 @@
+#minefield {
+  display: flex;
+  flex-direction: row;
+}
+
+.cell-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.cell {
+  width: 20px;
+  height: 20px;
+  border: 1px solid black;
+}

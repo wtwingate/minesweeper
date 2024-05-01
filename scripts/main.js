@@ -20,7 +20,7 @@ class Cell {
   }
 }
 
-class Grid {
+class Minefield {
   constructor(width, height) {
     this.width = width;
     this.height = height;
@@ -82,7 +82,7 @@ class Grid {
     return cellNeighbors;
   }
 
-  printGrid() {
+  logMinefield() {
     for (let y = 0; y < this.height; y++) {
       let row = "";
       for (let x = 0; x < this.height; x++) {
@@ -100,7 +100,39 @@ class Grid {
   }
 }
 
-const grid = new Grid(10, 10);
-grid.placeBombs();
-grid.countTouches();
-grid.printGrid();
+function createMinefieldDiv(minefield) {
+  const divMinefield = document.querySelector("#minefield");
+
+  for (let x = 0; x < minefield.width; x++) {
+    const column = document.createElement("div");
+    column.setAttribute("class", "cell-column");
+    for (let y = 0; y < minefield.height; y++) {
+      const cell = document.createElement("div");
+      cell.setAttribute("class", "cell");
+      cell.setAttribute("id", `${x},${y}`);
+      cell.addEventListener("click", () => {
+        revealCell(cell, minefield, x, y);
+      });
+      column.appendChild(cell);
+    }
+    divMinefield.appendChild(column);
+  }
+}
+
+function revealCell(cell, minefield, x, y) {
+  const target = minefield.grid[x][y];
+  if (target.bomb) {
+    cell.textContent = "@";
+  } else if (target.touch) {
+    cell.textContent = `${target.touch}`;
+  }
+}
+
+const width = 20;
+const height = 20;
+
+const minefield = new Minefield(width, height);
+minefield.placeBombs();
+minefield.countTouches();
+minefield.logMinefield();
+createMinefieldDiv(minefield);
