@@ -1,4 +1,4 @@
-const neighbors = [
+const DELTAS = [
   [0, 1],
   [1, 1],
   [1, 0],
@@ -16,6 +16,7 @@ class Cell {
     this.bomb = false;
     this.flag = false;
     this.reveal = false;
+    this.neighbors = [];
     this.touch = 0;
   }
 }
@@ -25,6 +26,7 @@ class Minefield {
     this.width = width;
     this.height = height;
     this.grid = this.createGrid(width, height);
+    this.clicked = [];
   }
 
   createGrid(width, height) {
@@ -59,8 +61,8 @@ class Minefield {
       const column = this.grid[i];
       for (let j = 0; j < column.length; j++) {
         const cell = column[j];
-        const cellNeighbors = this.getNeighbors(i, j);
-        for (const neighbor of cellNeighbors) {
+        this.getNeighbors(cell);
+        for (const neighbor of cell.neighbors) {
           if (neighbor.bomb) {
             cell.touch += 1;
           }
@@ -69,17 +71,54 @@ class Minefield {
     }
   }
 
-  getNeighbors(x, y) {
-    const cellNeighbors = [];
-    for (let [xOffset, yOffset] of neighbors) {
-      const nx = x + xOffset;
-      const ny = y + yOffset;
+  getNeighbors(cell) {
+    for (let [xOffset, yOffset] of DELTAS) {
+      const nx = cell.x + xOffset;
+      const ny = cell.y + yOffset;
       if (nx < 0 || nx >= this.width || ny < 0 || ny >= this.width) {
         continue;
       }
-      cellNeighbors.push(this.grid[nx][ny]);
+      cell.neighbors.push(this.grid[nx][ny]);
     }
-    return cellNeighbors;
+  }
+
+  displayMinefield() {
+    const divMinefield = document.querySelector("#minefield");
+    for (let x = 0; x < this.width; x++) {
+      const divColumn = document.createElement("div");
+      divColumn.setAttribute("class", "cell-column");
+      for (let y = 0; y < this.height; y++) {
+        const cell = this.grid[x][y];
+        const divCell = document.createElement("div");
+        divCell.setAttribute("class", "cell");
+        divCell.setAttribute("id", `${x},${y}`);
+        divCell.addEventListener("click", () => {
+          this.revealCell(cell, divCell);
+        });
+        divColumn.appendChild(divCell);
+      }
+      divMinefield.appendChild(divColumn);
+    }
+  }
+
+  revealCell(cell) {
+    this.clicked.push(cell);
+    cell.reveal = true;
+    const divCell = document.getElementById(`${cell.x},${cell.y}`);
+    if (cell.bomb) {
+      divCell.textContent = "@";
+    } else if (cell.touch) {
+      divCell.textContent = `${cell.touch}`;
+    } else {
+      const toVisit = cell.neighbors;
+      while (toVisit.length > 0) {
+        const nextCell = toVisit.pop();
+        if (this.clicked.includes(nextCell)) {
+          continue;
+        }
+        this.revealCell(nextCell);
+      }
+    }
   }
 
   logMinefield() {
@@ -100,34 +139,6 @@ class Minefield {
   }
 }
 
-function createMinefieldDiv(minefield) {
-  const divMinefield = document.querySelector("#minefield");
-
-  for (let x = 0; x < minefield.width; x++) {
-    const column = document.createElement("div");
-    column.setAttribute("class", "cell-column");
-    for (let y = 0; y < minefield.height; y++) {
-      const cell = document.createElement("div");
-      cell.setAttribute("class", "cell");
-      cell.setAttribute("id", `${x},${y}`);
-      cell.addEventListener("click", () => {
-        revealCell(cell, minefield, x, y);
-      });
-      column.appendChild(cell);
-    }
-    divMinefield.appendChild(column);
-  }
-}
-
-function revealCell(cell, minefield, x, y) {
-  const target = minefield.grid[x][y];
-  if (target.bomb) {
-    cell.textContent = "@";
-  } else if (target.touch) {
-    cell.textContent = `${target.touch}`;
-  }
-}
-
 const width = 20;
 const height = 20;
 
@@ -135,4 +146,4 @@ const minefield = new Minefield(width, height);
 minefield.placeBombs();
 minefield.countTouches();
 minefield.logMinefield();
-createMinefieldDiv(minefield);
+minefield.displayMinefield();
