@@ -1,48 +1,34 @@
-const DELTAS = [
-  [0, 1],
-  [1, 1],
-  [1, 0],
-  [1, -1],
-  [0, -1],
-  [-1, -1],
-  [-1, 0],
-  [-1, 1],
-];
-
-class Cell {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.bomb = false;
-    this.flagged = false;
-    this.revealed = false;
-    this.neighbors = [];
-    this.touching = 0;
-  }
-}
+import { Cell } from "./cell.js";
+import { DELTAS } from "./constants.js";
 
 class Minefield {
   constructor(width, height) {
     this.width = width;
     this.height = height;
-    this.grid = this.createGrid(width, height);
+    this.gameOver = false;
+    this.grid = [];
     this.bombCells = [];
     this.safeCells = [];
     this.revealedCells = [];
     this.flaggedCells = [];
   }
 
-  createGrid(width, height) {
-    const grid = [];
-    for (let x = 0; x < width; x++) {
+  playGame() {
+    this.createGrid();
+    this.placeBombs();
+    this.countTouches();
+    this.displayGrid();
+  }
+
+  createGrid() {
+    for (let x = 0; x < this.width; x++) {
       const column = [];
-      for (let y = 0; y < height; y++) {
+      for (let y = 0; y < this.height; y++) {
         const cell = new Cell(x, y);
         column.push(cell);
       }
-      grid.push(column);
+      this.grid.push(column);
     }
-    return grid;
   }
 
   placeBombs() {
@@ -88,8 +74,8 @@ class Minefield {
     }
   }
 
-  displayMinefield() {
-    const divMinefield = document.querySelector("#minefield");
+  displayGrid() {
+    const divGrid = document.getElementById("grid");
     for (let x = 0; x < this.width; x++) {
       const divColumn = document.createElement("div");
       divColumn.setAttribute("class", "cell-column");
@@ -108,18 +94,21 @@ class Minefield {
         });
         divColumn.appendChild(divCell);
       }
-      divMinefield.appendChild(divColumn);
+      divGrid.appendChild(divColumn);
     }
   }
 
   revealCell(cell) {
+    if (this.gameOver) {
+      return;
+    }
     this.revealedCells.push(cell);
     cell.revealed = true;
     const divCell = document.getElementById(`${cell.x},${cell.y}`);
     divCell.setAttribute("class", "revealed");
     if (cell.bomb) {
-      divCell.textContent = "@";
-      this.gameOver();
+      divCell.textContent = "💣";
+      this.loseGame();
     } else if (cell.touching) {
       divCell.textContent = `${cell.touching}`;
     } else {
@@ -135,6 +124,9 @@ class Minefield {
   }
 
   flagCell(cell) {
+    if (this.gameOver) {
+      return;
+    }
     const divCell = document.getElementById(`${cell.x},${cell.y}`);
     if (cell.revealed) {
       return;
@@ -145,7 +137,7 @@ class Minefield {
     } else {
       cell.flagged = true;
       this.flaggedCells.push(cell);
-      divCell.textContent = "^";
+      divCell.textContent = "⛳️";
     }
   }
 
@@ -155,11 +147,15 @@ class Minefield {
         return;
       }
     }
-    alert("Winner Winner Chicken Dinner!");
+    this.gameOver = true;
+    const gameState = document.getElementById("game-state");
+    gameState.textContent = "Winner Winner Chicken Dinner!";
   }
 
-  gameOver() {
-    alert("BOOM!");
+  loseGame() {
+    this.gameOver = true;
+    const gameState = document.getElementById("game-state");
+    gameState.textContent = "BOOM!";
   }
 
   logMinefield() {
@@ -180,11 +176,4 @@ class Minefield {
   }
 }
 
-const width = 10;
-const height = 10;
-
-const minefield = new Minefield(width, height);
-minefield.placeBombs();
-minefield.countTouches();
-minefield.logMinefield();
-minefield.displayMinefield();
+export { Minefield };
