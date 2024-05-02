@@ -14,10 +14,10 @@ class Cell {
     this.x = x;
     this.y = y;
     this.bomb = false;
-    this.flag = false;
-    this.reveal = false;
+    this.flagged = false;
+    this.revealed = false;
     this.neighbors = [];
-    this.touch = 0;
+    this.touching = 0;
   }
 }
 
@@ -28,8 +28,8 @@ class Minefield {
     this.grid = this.createGrid(width, height);
     this.bombCells = [];
     this.safeCells = [];
-    this.revealed = [];
-    this.flagged = [];
+    this.revealedCells = [];
+    this.flaggedCells = [];
   }
 
   createGrid(width, height) {
@@ -70,7 +70,7 @@ class Minefield {
         this.getNeighbors(cell);
         for (const neighbor of cell.neighbors) {
           if (neighbor.bomb) {
-            cell.touch += 1;
+            cell.touching += 1;
           }
         }
       }
@@ -99,7 +99,12 @@ class Minefield {
         divCell.setAttribute("class", "hidden");
         divCell.setAttribute("id", `${x},${y}`);
         divCell.addEventListener("click", () => {
-          this.revealCell(cell, divCell);
+          this.revealCell(cell);
+          this.checkWinCondition();
+        });
+        divCell.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          this.flagCell(cell);
         });
         divColumn.appendChild(divCell);
       }
@@ -108,24 +113,53 @@ class Minefield {
   }
 
   revealCell(cell) {
-    this.revealed.push(cell);
-    cell.reveal = true;
+    this.revealedCells.push(cell);
+    cell.revealed = true;
     const divCell = document.getElementById(`${cell.x},${cell.y}`);
     divCell.setAttribute("class", "revealed");
     if (cell.bomb) {
       divCell.textContent = "@";
-    } else if (cell.touch) {
-      divCell.textContent = `${cell.touch}`;
+      this.gameOver();
+    } else if (cell.touching) {
+      divCell.textContent = `${cell.touching}`;
     } else {
       const toVisit = cell.neighbors;
       while (toVisit.length > 0) {
         const nextCell = toVisit.pop();
-        if (this.revealed.includes(nextCell)) {
+        if (this.revealedCells.includes(nextCell)) {
           continue;
         }
         this.revealCell(nextCell);
       }
     }
+  }
+
+  flagCell(cell) {
+    const divCell = document.getElementById(`${cell.x},${cell.y}`);
+    if (cell.revealed) {
+      return;
+    } else if (cell.flagged) {
+      cell.flagged = false;
+      this.flaggedCells = this.flaggedCells.filter((e) => e != cell);
+      divCell.textContent = "";
+    } else {
+      cell.flagged = true;
+      this.flaggedCells.push(cell);
+      divCell.textContent = "^";
+    }
+  }
+
+  checkWinCondition() {
+    for (const safeCell of this.safeCells) {
+      if (!this.revealedCells.includes(safeCell)) {
+        return;
+      }
+    }
+    alert("Winner Winner Chicken Dinner!");
+  }
+
+  gameOver() {
+    alert("BOOM!");
   }
 
   logMinefield() {
@@ -135,8 +169,8 @@ class Minefield {
         const cell = this.grid[x][y];
         if (cell.bomb) {
           row += " @";
-        } else if (cell.touch) {
-          row += ` ${cell.touch}`;
+        } else if (cell.touching) {
+          row += ` ${cell.touching}`;
         } else {
           row += " .";
         }
@@ -146,8 +180,8 @@ class Minefield {
   }
 }
 
-const width = 20;
-const height = 20;
+const width = 10;
+const height = 10;
 
 const minefield = new Minefield(width, height);
 minefield.placeBombs();
