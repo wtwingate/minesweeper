@@ -8,8 +8,16 @@
   flex-direction: column;
 }
 
-.cell {
+.hidden {
   width: 20px;
   height: 20px;
   border: 1px solid black;
+  background-color: gray;
+}
+
+.revealed {
+  width: 20px;
+  height: 20px;
+  border: 1px solid black;
+  background-color: white;
 }

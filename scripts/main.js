@@ -26,7 +26,10 @@ class Minefield {
     this.width = width;
     this.height = height;
     this.grid = this.createGrid(width, height);
-    this.clicked = [];
+    this.bombCells = [];
+    this.safeCells = [];
+    this.revealed = [];
+    this.flagged = [];
   }
 
   createGrid(width, height) {
@@ -50,6 +53,9 @@ class Minefield {
         const cell = column[j];
         if (0.1 > Math.random()) {
           cell.bomb = true;
+          this.bombCells.push(cell);
+        } else {
+          this.safeCells.push(cell);
         }
       }
     }
@@ -90,7 +96,7 @@ class Minefield {
       for (let y = 0; y < this.height; y++) {
         const cell = this.grid[x][y];
         const divCell = document.createElement("div");
-        divCell.setAttribute("class", "cell");
+        divCell.setAttribute("class", "hidden");
         divCell.setAttribute("id", `${x},${y}`);
         divCell.addEventListener("click", () => {
           this.revealCell(cell, divCell);
@@ -102,9 +108,10 @@ class Minefield {
   }
 
   revealCell(cell) {
-    this.clicked.push(cell);
+    this.revealed.push(cell);
     cell.reveal = true;
     const divCell = document.getElementById(`${cell.x},${cell.y}`);
+    divCell.setAttribute("class", "revealed");
     if (cell.bomb) {
       divCell.textContent = "@";
     } else if (cell.touch) {
@@ -113,7 +120,7 @@ class Minefield {
       const toVisit = cell.neighbors;
       while (toVisit.length > 0) {
         const nextCell = toVisit.pop();
-        if (this.clicked.includes(nextCell)) {
+        if (this.revealed.includes(nextCell)) {
           continue;
         }
         this.revealCell(nextCell);
